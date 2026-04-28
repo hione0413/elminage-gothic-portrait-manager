@@ -87,6 +87,9 @@ STR = {
         "load_large":         "큰 포트레이트용 이미지 불러오기 (1088×1088)",
         "load_small":         "작은 포트레이트용 이미지 불러오기 (선택, 192×192)",
         "clear_image":        "이미지 비우기",
+        "fit_mode_label":     "맞춤 방식:",
+        "fit_mode_fill":      "꽉 채움 (Fill)",
+        "fit_mode_fit":       "전체 표시 (Fit)",
         "large_box":          "GR11_XXX.dds (큰 포트레이트, 1088×1088)",
         "small_box":          "GR10_XXX.dds (작은 포트레이트, 192×192)",
         "auto_crop_label":    "(자동: 큰 이미지 상단 중앙 크롭)",
@@ -144,6 +147,9 @@ STR = {
         "load_large":         "Load image for large portrait (1088×1088)",
         "load_small":         "Load image for small portrait (optional, 192×192)",
         "clear_image":        "Clear images",
+        "fit_mode_label":     "Image fit:",
+        "fit_mode_fill":      "Fill (crop)",
+        "fit_mode_fit":       "Fit (pad)",
         "large_box":          "GR11_XXX.dds (large portrait, 1088×1088)",
         "small_box":          "GR10_XXX.dds (small portrait, 192×192)",
         "auto_crop_label":    "(auto: top-center crop of large image)",
@@ -256,6 +262,7 @@ def write_dds_rgba8(path: Path, image: Image.Image) -> None:
 # Image helpers
 # ---------------------------------------------------------------------------
 def fit_to_square(img: Image.Image, target: int) -> Image.Image:
+    """Scale to fit inside target×target, pad rest with transparency."""
     img = img.convert("RGBA")
     w, h = img.size
     scale = target / max(w, h)
@@ -265,6 +272,19 @@ def fit_to_square(img: Image.Image, target: int) -> Image.Image:
     canvas = Image.new("RGBA", (target, target), (0, 0, 0, 0))
     canvas.paste(resized, ((target - new_w) // 2, (target - new_h) // 2), resized)
     return canvas
+
+
+def fill_to_square(img: Image.Image, target: int) -> Image.Image:
+    """Scale so the square is fully covered, center-crop overflow."""
+    img = img.convert("RGBA")
+    w, h = img.size
+    scale = target / min(w, h)
+    new_w = max(target, int(round(w * scale)))
+    new_h = max(target, int(round(h * scale)))
+    resized = img.resize((new_w, new_h), Image.LANCZOS)
+    left = (new_w - target) // 2
+    top = (new_h - target) // 2
+    return resized.crop((left, top, left + target, top + target))
 
 
 def auto_crop_head(img: Image.Image) -> Image.Image:
@@ -351,6 +371,11 @@ class PortraitManagerApp(tk.Tk):
         self.race_gender_combo["values"] = self._race_gender_combo_values()
         if 0 <= idx < len(RACE_GENDER_RANGES):
             self.race_gender_combo.current(idx)
+        # Fit mode combo: preserve selection (default to Fill on first run)
+        fit_idx = self.fit_mode_combo.current()
+        self.fit_mode_combo["values"] = [self.t("fit_mode_fill"),
+                                         self.t("fit_mode_fit")]
+        self.fit_mode_combo.current(fit_idx if fit_idx >= 0 else 0)
         # Dynamic strings
         self._update_id_label()
         self._update_small_source_label()
@@ -364,12 +389,9 @@ class PortraitManagerApp(tk.Tk):
     def _build_ui(self) -> None:
         pad = {"padx": 8, "pady": 4}
 
-        # Top: language switcher
+        # Top: language switcher  (label on the LEFT of the combo)
         bar = ttk.Frame(self)
         bar.pack(fill="x", **pad)
-        lang_lbl = ttk.Label(bar)
-        lang_lbl.pack(side="right", padx=(0, 4))
-        self._labels["language"] = lang_lbl
 
         self.language_var = tk.StringVar(value=LANGUAGES[0][1])
         lang_combo = ttk.Combobox(
@@ -377,8 +399,12 @@ class PortraitManagerApp(tk.Tk):
             values=[disp for _c, disp in LANGUAGES],
             state="readonly", width=12,
         )
-        lang_combo.pack(side="right")
+        lang_combo.pack(side="right", padx=(4, 0))
         lang_combo.bind("<<ComboboxSelected>>", self._on_language_change)
+
+        lang_lbl = ttk.Label(bar)
+        lang_lbl.pack(side="right")
+        self._labels["language"] = lang_lbl
 
         # Game folder
         gf = ttk.LabelFrame(self)
@@ -441,6 +467,15 @@ class PortraitManagerApp(tk.Tk):
             b.pack(side="left", padx=4)
             self._buttons[key] = b
 
+        ttk.Separator(btns, orient="vertical").pack(side="left", fill="y", padx=8)
+        fit_lbl = ttk.Label(btns)
+        fit_lbl.pack(side="left")
+        self._labels["fit_mode_label"] = fit_lbl
+        self.fit_mode_combo = ttk.Combobox(btns, state="readonly", width=18)
+        self.fit_mode_combo.pack(side="left", padx=(4, 0))
+        self.fit_mode_combo.bind("<<ComboboxSelected>>",
+                                 lambda _e: self._refresh_preview())
+
         previews = ttk.Frame(img_frame)
         previews.pack(fill="both", expand=True, padx=6, pady=8)
 
@@ -448,14 +483,16 @@ class PortraitManagerApp(tk.Tk):
         large_box.pack(side="left", fill="both", expand=True, padx=4)
         self._frames["large_box"] = large_box
         self.large_canvas = tk.Canvas(large_box, width=PREVIEW_LARGE_DISPLAY,
-                                      height=PREVIEW_LARGE_DISPLAY, bg="#222")
+                                      height=PREVIEW_LARGE_DISPLAY, bg="#222",
+                                      highlightthickness=0, borderwidth=0)
         self.large_canvas.pack(padx=6, pady=6)
 
         small_box = ttk.LabelFrame(previews)
         small_box.pack(side="left", fill="both", expand=False, padx=4)
         self._frames["small_box"] = small_box
         self.small_canvas = tk.Canvas(small_box, width=PREVIEW_SMALL_DISPLAY,
-                                      height=PREVIEW_SMALL_DISPLAY, bg="#222")
+                                      height=PREVIEW_SMALL_DISPLAY, bg="#222",
+                                      highlightthickness=0, borderwidth=0)
         self.small_canvas.pack(padx=6, pady=6)
         ttk.Label(small_box, textvariable=self.small_source_label_var,
                   foreground="#666").pack(padx=6, pady=2)
@@ -575,16 +612,25 @@ class PortraitManagerApp(tk.Tk):
         self._refresh_preview()
 
     # ---- preview -----------------------------------------------------------
+    def _current_fit_mode(self) -> str:
+        return "fit" if self.fit_mode_combo.current() == 1 else "fill"
+
+    def _to_square(self, img: Image.Image, target: int) -> Image.Image:
+        if self._current_fit_mode() == "fit":
+            return fit_to_square(img, target)
+        return fill_to_square(img, target)
+
     def _build_large_processed(self) -> Image.Image | None:
         if self.large_source is None:
             return None
-        return fit_to_square(self.large_source, LARGE_SIZE)
+        return self._to_square(self.large_source, LARGE_SIZE)
 
     def _build_small_processed(self) -> Image.Image | None:
         if self.small_source is not None:
-            return fit_to_square(self.small_source, SMALL_SIZE)
+            return self._to_square(self.small_source, SMALL_SIZE)
         if self.large_source is not None:
-            return fit_to_square(auto_crop_head(self.large_source), SMALL_SIZE)
+            # auto: head-crop the large image first, then size to target
+            return self._to_square(auto_crop_head(self.large_source), SMALL_SIZE)
         return None
 
     def _refresh_preview(self) -> None:

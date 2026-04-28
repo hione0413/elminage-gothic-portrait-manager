@@ -17,3 +17,6 @@ Thumbs.db
 .idea/
 .vscode/
 *.swp
+
+# Local dev assets for the Steam guide (not part of the tool source)
+guide_assets/
