@@ -7,6 +7,10 @@ Pick a race / gender / slot, load any image (PNG, JPG, etc.), click **Install**.
 generates correctly-named, correctly-sized `.dds` files and drops them into your game folder.
 The game then uses them in place of the originals.
 
+UI is available in **English** and **한국어** — pick the one you want from the **Language**
+selector in the top-right corner. The default is Korean; everything switches live, no
+restart needed.
+
 ---
 
 ## Quick Start (end users)
@@ -16,12 +20,13 @@ The game then uses them in place of the originals.
    (A typical path is something like
    `…\SteamLibrary\steamapps\common\Elminage Gothic\`.)
 3. Double-click the `.exe`.
-4. Choose **Race / Gender** and a **Slot** number.
-5. Click **"큰 포트레이트용 이미지 불러오기"** (*Load image for large portrait*) and pick any image.
+4. (Optional) Switch the **Language** selector in the top-right corner to *English*.
+5. Choose **Race / Gender** and a **Slot** number.
+6. Click **Load image for large portrait** and pick any image.
    - Optionally also load a separate image for the small head icon. If you skip this, the
      tool auto-crops the upper-center square of the large image.
-6. Click **"설치 / 적용"** (*Install / Apply*).
-7. Launch the game and create a character of that race / gender — your portrait will appear
+7. Click **Install / Apply**.
+8. Launch the game and create a character of that race / gender — your portrait will appear
    in the matching slot.
 
 No Python, no Pillow, no extra installation needed. The `.exe` is fully self-contained
@@ -29,9 +34,9 @@ No Python, no Pillow, no extra installation needed. The `.exe` is fully self-con
 
 ### Removing a portrait
 
-- Pick the same race / gender / slot and click **"이 슬롯의 커스텀 포트레이트 제거"**, **or**
+- Pick the same race / gender / slot and click **Remove custom portrait for this slot**, **or**
 - Select an entry in the *Installed custom portraits* list at the bottom and click
-  **"선택 항목 제거"**.
+  **Remove selected**.
 
 The tool only ever touches files matching `GR10_<id>.dds` / `GR11_<id>.dds`; the original
 game archives (`S00.bra` … `S03.bra`) are never modified.
