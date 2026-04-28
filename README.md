@@ -11,6 +11,12 @@ UI is available in **English** and **한국어** — pick the one you want from 
 selector in the top-right corner. The default is English; everything switches live, no
 restart needed.
 
+![Portrait Manager — main UI](screenshots/tool_main.png)
+
+*The portrait above, as it appears in the game's character screen after installing:*
+
+![Custom portrait shown in-game](screenshots/in_game.png)
+
 ---
 
 ## Quick Start (end users)
