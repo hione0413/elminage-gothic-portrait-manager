@@ -8,7 +8,7 @@ generates correctly-named, correctly-sized `.dds` files and drops them into your
 The game then uses them in place of the originals.
 
 UI is available in **English** and **한국어** — pick the one you want from the **Language**
-selector in the top-right corner. The default is Korean; everything switches live, no
+selector in the top-right corner. The default is English; everything switches live, no
 restart needed.
 
 ---

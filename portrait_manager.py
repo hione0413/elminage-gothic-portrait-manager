@@ -57,7 +57,7 @@ RACE_GENDER_RANGES = [
 # ---------------------------------------------------------------------------
 # i18n strings
 # ---------------------------------------------------------------------------
-LANGUAGES = [("ko", "한국어"), ("en", "English")]
+LANGUAGES = [("en", "English"), ("ko", "한국어")]
 
 RACE_NAMES = {
     "ko": {"human": "인간", "elf": "엘프", "dwarf": "드워프", "gnome": "놈",
@@ -281,7 +281,7 @@ def auto_crop_head(img: Image.Image) -> Image.Image:
 class PortraitManagerApp(tk.Tk):
     def __init__(self) -> None:
         super().__init__()
-        self.lang = "ko"
+        self.lang = "en"
         self.title(self.t("title"))
         self.geometry("900x720")
         self.minsize(820, 640)
